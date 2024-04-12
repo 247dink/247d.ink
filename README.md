@@ -1,6 +1,7 @@
 # 247d.ink
 URL Shortener
 
+https://firebase.google.com/docs/hosting/cloud-run
 
 ```bash
 # To configure gcloud:

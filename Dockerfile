@@ -1,21 +1,20 @@
-FROM golang as builder
+FROM golang:1.22 as builder
 
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 
+COPY src /app
+
 WORKDIR /app
 
-COPY go.* ./
 RUN go mod download
 
-COPY main.go ./
-
-RUN ls -lah
-RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -mod=readonly -v -o server
+RUN go install github.com/mitranim/gow@latest
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -v -o server
 
 FROM alpine
 RUN apk add --no-cache ca-certificates
 
-COPY --from=builder /app/server /server
+COPY --from=builder /app/server /app/server
 
-CMD ["/server"]
+CMD ["/app/server"]

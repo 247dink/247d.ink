@@ -1,0 +1,16 @@
+services:
+  247d_ink:
+    image: 247d_ink
+    build:
+      dockerfile: Dockerfile
+      target: builder
+    command: gow run main.go
+    volumes:
+      - ./src:/app:ro
+      - ./dink-412003-d93fb5f618ba.json:/dink-412003-d93fb5f618ba.json:ro
+    environment:
+      - HOST=0.0.0.0
+      - AUTH_KEY=/dink-412003-d93fb5f618ba.json
+      - SENTRY_DSN=https://3811839bf077e9e5733103f1a295752c@o4506735924019200.ingest.us.sentry.io/4507076127424512
+    ports:
+      - 8080:8080
