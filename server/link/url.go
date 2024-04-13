@@ -20,12 +20,13 @@ const COLLECTION_NAME string = "url"
 
 
 type Link struct {
-	Id      string      `json:"id" firestore:"-"`
-	Url     string      `json:"url" firestore:"url"`
-	Created time.Time   `json:"created" firestore:"-"`
-	Accessed time.Time  `json:"accessed" firestore:"-"`
-	Updated time.Time   `json:"updated" firestore:"-"`
-	Count	int64	    `json:"count" firestore:"count"`
+	Id          string      `json:"id" firestore:"-"`
+	Url         string      `json:"url" firestore:"url"`
+	Created     time.Time   `json:"created" firestore:"-"`
+	Accessed    time.Time   `json:"accessed" firestore:"-"`
+	Updated     time.Time   `json:"updated" firestore:"-"`
+	AccessCount	int64	    `json:"accessCount" firestore:"accessCount"`
+	UpdateCount	int64	    `json:"updateCount" firestore:"updateCount"`
 }
 
 func NewLink(url string) (*Link, error) {
@@ -36,7 +37,8 @@ func NewLink(url string) (*Link, error) {
 
 	l := &Link{
 		Url: url,
-		Count: 0,
+		AccessCount: 0,
+		UpdateCount: 0,
 		Id: id,
 		Created: time.Now(),
 		Accessed: time.Time{},
@@ -70,7 +72,7 @@ func (s *Server) Save(url string, r *http.Request) *Link {
 		if err == nil {
 			doc.DataTo(&link)
 			tx.Update(doc.Ref, []firestore.Update{
-				{Path: "updated", Value: time.Now()},
+				{Path: "updateCount", Value: firestore.Increment(1)},
 			})
 			link.Id = doc.Ref.ID
 			link.Created = doc.CreateTime
@@ -115,8 +117,7 @@ func (s *Server) Get(id string, r *http.Request) *Link {
 		}
 
 		tx.Update(ref, []firestore.Update{
-			{Path: "count", Value: firestore.Increment(1)},
-			{Path: "accessed", Value: time.Now()},
+			{Path: "accessCount", Value: firestore.Increment(1)},
 		})
 
 		doc.DataTo(&link)

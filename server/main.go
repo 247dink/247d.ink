@@ -14,7 +14,11 @@ import (
 	"github.com/247dink/247d.ink/link"
 )
 
-func setup_sentry() *sentryhttp.Handler {
+var sentryHandler *sentryhttp.Handler
+var defaultUrl string
+var address string
+
+func init() {
 	sentry_dsn := os.Getenv("SENTRY_DSN")
 	if sentry_dsn != "" {
 		if err := sentry.Init(sentry.ClientOptions{
@@ -26,22 +30,32 @@ func setup_sentry() *sentryhttp.Handler {
 		}
 	}
 
-	sentryHandler := sentryhttp.New(sentryhttp.Options{})
-	return sentryHandler
+	sentryHandler = sentryhttp.New(sentryhttp.Options{})
+
+	portStr := os.Getenv("PORT")
+	if portStr == "" {
+		portStr = "8080"
+	}
+	hostStr := os.Getenv("HOST")
+	if hostStr == "" {
+		hostStr = "localhost"
+	}
+	address = fmt.Sprintf("%s:%s", hostStr, portStr)
+
+	defaultUrl = os.Getenv("DEFAULT_REDIRECT")
 }
 
 func main() {
 	log.Print("247d.ink: starting server...")
 
-	server, err := link.NewServer()
 	defer link.Client.Close()
+
+	server, err := link.NewServer()
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
 
 	mux := http.NewServeMux()
-	sentryHandler := setup_sentry()
-	defaultUrl := os.Getenv("DEFAULT_REDIRECT")
 
 	mux.HandleFunc("GET /{id...}", sentryHandler.HandleFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -102,16 +116,6 @@ func main() {
 		}
 	}))
 
-	portStr := os.Getenv("PORT")
-	if portStr == "" {
-		portStr = "8080"
-	}
-	hostStr := os.Getenv("HOST")
-	if hostStr == "" {
-		hostStr = "localhost"
-	}
-	bind := fmt.Sprintf("%s:%s", hostStr, portStr)
-
-	log.Printf("247d.ink: listening on %s", bind)
-	log.Fatal(http.ListenAndServe(bind, mux))
+	log.Printf("247d.ink: listening on %s", address)
+	log.Fatal(http.ListenAndServe(address, mux))
 }

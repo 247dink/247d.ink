@@ -6,7 +6,7 @@ services:
       target: builder
     command: gow run main.go
     volumes:
-      - ./src:/app:ro
+      - ./server:/app:ro
       - ./dink-412003-d93fb5f618ba.json:/dink-412003-d93fb5f618ba.json:ro
     environment:
       - HOST=0.0.0.0
