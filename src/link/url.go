@@ -1,9 +1,14 @@
 package link
 
 import (
+	"os"
 	"log"
 	"time"
+	"errors"
 	"context"
+	"encoding/base64"
+	"crypto/hmac"
+	"crypto/sha256"
 
 	"cloud.google.com/go/firestore"
 	"github.com/teris-io/shortid"
@@ -34,14 +39,21 @@ func NewLink(url string) (*Link, error) {
 type Server struct {
 	*firestore.Client
 	context.Context
+	PublicKey []byte
 }
 
-func NewServer(client *firestore.Client, ctx context.Context) *Server {
+func NewServer(client *firestore.Client, ctx context.Context) (*Server, error) {
+	pubKey := os.Getenv("SHARED_TOKEN")
+	if pubKey == "" {
+		return nil, errors.New("Signing key missing set SHARED_TOKEN")
+	}
+
 	s := &Server{
 		Client: client,
 		Context: ctx,
+		PublicKey: []byte(pubKey),
 	}
-	return s
+	return s, nil
 }
 
 func (s *Server) Save(url string) *Link {
@@ -63,8 +75,7 @@ func (s *Server) Save(url string) *Link {
 		}
 
 		ref := s.Client.Collection("url").Doc(link.Id)
-		err = tx.Create(ref, link)
-		if err != nil {
+		if err = tx.Create(ref, link); err != nil {
 			log.Printf("Error saving: %s", err)
 			return nil
 		}
@@ -95,4 +106,17 @@ func (s *Server) Get(id string) *Link {
 	})
 
 	return link
+}
+
+func (s *Server) CheckSignature(url string, signature string) bool {
+	sig, err := base64.URLEncoding.DecodeString(signature)
+	if err != nil {
+		return false
+	}
+
+	mac := hmac.New(sha256.New, s.PublicKey)
+	mac.Write([]byte(url))
+	xMAC := mac.Sum(nil)
+
+	return hmac.Equal(sig, xMAC)
 }

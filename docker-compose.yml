@@ -8,9 +8,11 @@ services:
     volumes:
       - ./src:/app:ro
       - ./dink-412003-d93fb5f618ba.json:/dink-412003-d93fb5f618ba.json:ro
+      - ./keys/public.pem:/public.pem:ro
     environment:
       - HOST=0.0.0.0
       - AUTH_KEY=/dink-412003-d93fb5f618ba.json
       - SENTRY_DSN=https://3811839bf077e9e5733103f1a295752c@o4506735924019200.ingest.us.sentry.io/4507076127424512
+      - SHARED_TOKEN=339aba4a-d7c1-4b35-a8bd-d2ebb00fb258
     ports:
       - 8080:8080
