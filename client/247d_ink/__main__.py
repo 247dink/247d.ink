@@ -2,6 +2,7 @@ import os
 import sys
 import hmac
 import base64
+from pprint import pprint
 from hashlib import sha256
 
 import requests
@@ -20,8 +21,13 @@ def sign(url):
 def main():
     url = sys.argv[1]
     s = sign(url)
+    print("Signature: %s" % s.decode())
     r = requests.post('http://localhost:8080', {'url': url}, headers={'X-Signature': s})
-    print(r.content)
+    try:
+        pprint(r.json())
+
+    except Exception:
+        print("ERROR:", r.content.decode())
 
 
 if __name__ == '__main__':

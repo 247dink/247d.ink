@@ -134,6 +134,7 @@ func main() {
 			return
 		}
 
+		log.Printf("Signature: %s", signature)
 		if !server.CheckSignature(uri.String(), signature) {
 			http.Error(w, "Signature invalid", http.StatusUnauthorized)
 			return

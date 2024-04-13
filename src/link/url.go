@@ -14,11 +14,17 @@ import (
 	"github.com/teris-io/shortid"
 )
 
+
+const COLLECTION_NAME string = "url"
+
+
 type Link struct {
-	Id      string    `json:"id" firestore:"id"`
-	Url     string    `json:"url" firestore:"url"`
-	Created time.Time `json:"created" firestore:"created"`
-	Count	int64	  `json:"count" firestore:"count"`
+	Id      string      `json:"id" firestore:"id"`
+	Url     string      `json:"url" firestore:"url"`
+	Created time.Time   `json:"created" firestore:"created"`
+	Accessed time.Time  `json:"accessed" firestore:"accessed"`
+	Updated time.Time   `json:"updated" firestore:"updated"`
+	Count	int64	    `json:"count" firestore:"count"`
 }
 
 func NewLink(url string) (*Link, error) {
@@ -64,6 +70,10 @@ func (s *Server) Save(url string) *Link {
 		doc, err := q.Documents(s.Context).Next()
 		if err == nil {
 			doc.DataTo(&link)
+			ref := s.Client.Collection(COLLECTION_NAME).Doc(link.Id)
+			tx.Update(ref, []firestore.Update{
+				{Path: "updated", Value: time.Now()},
+			})
 			return nil
 		}
 		log.Printf("Url '%s' not found: %s", url, err)
@@ -74,7 +84,8 @@ func (s *Server) Save(url string) *Link {
 			return nil
 		}
 
-		ref := s.Client.Collection("url").Doc(link.Id)
+		log.Printf("link.Id: %s", link.Id)
+		ref := s.Client.Collection(COLLECTION_NAME).Doc(link.Id)
 		if err = tx.Create(ref, link); err != nil {
 			log.Printf("Error saving: %s", err)
 			return nil
@@ -90,7 +101,7 @@ func (s *Server) Get(id string) *Link {
 	var link *Link = nil
 
 	s.Client.RunTransaction(s.Context, func(ctx context.Context, tx *firestore.Transaction) error {
-		ref := s.Client.Collection("url").Doc(id)
+		ref := s.Client.Collection(COLLECTION_NAME).Doc(id)
 		doc, err := tx.Get(ref)
 		if err != nil {
 			log.Printf("Could not find url '%s': %s", id, err)
@@ -99,6 +110,7 @@ func (s *Server) Get(id string) *Link {
 
 		tx.Update(ref, []firestore.Update{
 			{Path: "count", Value: firestore.Increment(1)},
+			{Path: "accessed", Value: time.Now()},
 		})
 
 		doc.DataTo(&link)
@@ -109,7 +121,7 @@ func (s *Server) Get(id string) *Link {
 }
 
 func (s *Server) CheckSignature(url string, signature string) bool {
-	sig, err := base64.URLEncoding.DecodeString(signature)
+	sig, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
 		return false
 	}
