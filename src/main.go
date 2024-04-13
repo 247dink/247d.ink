@@ -4,55 +4,15 @@ import (
 	"os"
 	"fmt"
 	"log"
-	"context"
 	"net/url"
 	"net/http"
 	"encoding/json"
 
-	firebase "firebase.google.com/go/v4"
-	"google.golang.org/api/option"
-	"cloud.google.com/go/firestore"
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
 
 	"github.com/247dink/247d.ink/link"
 )
-
-func open_db() (*firestore.Client, context.Context) {
-	ctx := context.Background()
-
-	auth_key := os.Getenv("AUTH_KEY")
-	project_id := os.Getenv("PROJECT_ID")
-	var app *firebase.App = nil
-	var err error
-
-	if auth_key != "" {
-		sa := option.WithCredentialsFile(auth_key)
-		app, err = firebase.NewApp(ctx, nil, sa)
-		if err != nil {
-			log.Printf("Error loading credentials: %s", err)
-		}
-	}
-	
-	if app == nil && project_id != "" {
-		conf := &firebase.Config{ProjectID: project_id}
-		app, err = firebase.NewApp(ctx, conf)
-		if err != nil {
-			log.Printf("Error initializing app: %s", err)
-		}
-	}
-
-	if app == nil {
-		log.Fatalln("Must define AUTH_KEY or PROJECT_ID")
-	}
-	
-	client, err := app.Firestore(ctx)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	return client, ctx
-}
 
 func setup_sentry() *sentryhttp.Handler {
 	sentry_dsn := os.Getenv("SENTRY_DSN")
@@ -73,9 +33,8 @@ func setup_sentry() *sentryhttp.Handler {
 func main() {
 	log.Print("247d.ink: starting server...")
 
-	client, ctx := open_db()
-	defer client.Close()
-	server, err := link.NewServer(client, ctx)
+	server, err := link.NewServer()
+	defer link.Client.Close()
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
@@ -96,7 +55,7 @@ func main() {
 		}
 
 		log.Printf("GET Request received. id: %s", id)
-		obj := server.Get(id)
+		obj := server.Get(id, r)
 		if obj == nil {
 			if defaultUrl == "" {
 				http.NotFound(w, r)
@@ -117,11 +76,6 @@ func main() {
 		}
 
 		arg := r.FormValue("url")
-		if arg == "" {
-			http.Error(w, "Missing url parameter", http.StatusBadRequest)
-			return
-		}
-
 		uri, err := url.ParseRequestURI(arg)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -129,18 +83,13 @@ func main() {
 		}
 
 		signature := r.Header.Get("X-Signature")
-		if signature == "" {
-			http.Error(w, "Signature missing", http.StatusUnauthorized)
-			return
-		}
-
 		log.Printf("Signature: %s", signature)
 		if !server.CheckSignature(uri.String(), signature) {
-			http.Error(w, "Signature invalid", http.StatusUnauthorized)
+			http.Error(w, "Bad or missing signature", http.StatusUnauthorized)
 			return
 		}
 
-		obj := server.Save(uri.String())
+		obj := server.Save(uri.String(), r)
 		if obj == nil {
 			http.Error(w, "Could not save url", http.StatusInternalServerError)
 			return

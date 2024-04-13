@@ -8,7 +8,6 @@ services:
     volumes:
       - ./src:/app:ro
       - ./dink-412003-d93fb5f618ba.json:/dink-412003-d93fb5f618ba.json:ro
-      - ./keys/public.pem:/public.pem:ro
     environment:
       - HOST=0.0.0.0
       - AUTH_KEY=/dink-412003-d93fb5f618ba.json
