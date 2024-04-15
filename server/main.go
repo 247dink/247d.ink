@@ -6,17 +6,25 @@ import (
 	"log"
 	"net/url"
 	"net/http"
+	"io/ioutil"
 	"encoding/json"
 
 	"github.com/getsentry/sentry-go"
 	sentryhttp "github.com/getsentry/sentry-go/http"
+	"github.com/golang-jwt/jwt/v5"
 
 	"github.com/247dink/247d.ink/link"
 )
 
 var sentryHandler *sentryhttp.Handler
 var defaultUrl string
+var secret string
 var address string
+
+type JWTClaims struct {
+	Url string `json:"url"`
+	jwt.RegisteredClaims
+}
 
 func init() {
 	sentry_dsn := os.Getenv("SENTRY_DSN")
@@ -43,6 +51,7 @@ func init() {
 	address = fmt.Sprintf("%s:%s", hostStr, portStr)
 
 	defaultUrl = os.Getenv("DEFAULT_REDIRECT")
+	secret = os.Getenv("SHARED_SECRET")
 }
 
 func main() {
@@ -84,22 +93,33 @@ func main() {
 
 	mux.HandleFunc("POST /", sentryHandler.HandleFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("POST Request received.")
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, "Could not read request", http.StatusBadRequest)
 			return
 		}
 
-		arg := r.FormValue("url")
-		uri, err := url.ParseRequestURI(arg)
+		token, err := jwt.ParseWithClaims(string(body), &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
+		})
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+		if !token.Valid {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
 
-		signature := r.Header.Get("X-Signature")
-		log.Printf("Signature: %s", signature)
-		if !server.CheckSignature(uri.String(), signature) {
-			http.Error(w, "Bad or missing signature", http.StatusUnauthorized)
+		claims, ok := token.Claims.(*JWTClaims)
+		if !ok {
+			http.Error(w, "Could not parse token", http.StatusBadRequest)
+			return
+		}
+
+		uri, err := url.ParseRequestURI(claims.Url)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 

@@ -1,41 +1,41 @@
 import os
-import hmac
-import base64
 import logging
-from hashlib import sha256
+from datetime import datetime, timedelta, timezone
 from pprint import pprint
 
 import requests
 from requests.exceptions import JSONDecodeError
+import jwt
 
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
-SHARED_TOKEN = os.getenv('SHARED_TOKEN', None)
+SHARED_SECRET = os.getenv('SHARED_SECRET', None)
 SERVICE_URL = os.getenv('SERVICE_URL', 'http://localhost:8080/')
 
 
 class Client:
-    def __init__(self, token=SHARED_TOKEN, service_url=SERVICE_URL):
+    def __init__(self, secret=SHARED_SECRET, service_url=SERVICE_URL):
         try:
-            self.token = token.encode()
+            self.secret = secret.encode()
         except AttributeError:
-            self.token = token
+            self.secret = secret
         self.service_url = service_url
 
     def sign(self, url):
-        if self.token is None:
-            raise Exception("Token was not provided")
-        h = hmac.new(self.token, url.encode(), sha256)
-        return base64.b64encode(h.digest())
+        if self.secret is None:
+            raise Exception("Secret was not provided")
+        return jwt.encode({
+            "url": url,
+            "exp": datetime.now(tz=timezone.utc) + timedelta(hours=4),
+        }, self.secret, algorithm='HS256')
 
     def create(self, url):
-        s = self.sign(url)
         r = requests.post(
             self.service_url,
-            {'url': url},
-            headers={'X-Signature': s},
+            self.sign(url),
+            headers={'Content-Type': 'application/jwt'},
         )
         try:
             id = r.json()['id']

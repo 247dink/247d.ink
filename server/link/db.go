@@ -14,7 +14,7 @@ var Client *firestore.Client
 
 func init() {
 	auth_key := os.Getenv("AUTH_KEY")
-	project_id := os.Getenv("PROJECT_ID")
+	project_id := os.Getenv("FIRESTORE_PROJECT_ID")
 	ctx := context.Background()
 	var app *firebase.App = nil
 	var err error
@@ -36,7 +36,7 @@ func init() {
 	}
 
 	if app == nil {
-		log.Fatalln("Must define AUTH_KEY or PROJECT_ID")
+		log.Fatalln("Must define AUTH_KEY or FIRESTORE_PROJECT_ID")
 	}
 	
 	Client, err = app.Firestore(ctx)

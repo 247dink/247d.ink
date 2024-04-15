@@ -1,15 +1,10 @@
 package link
 
 import (
-	"os"
 	"log"
 	"time"
 	"net/http"
-	"errors"
 	"context"
-	"encoding/base64"
-	"crypto/hmac"
-	"crypto/sha256"
 
 	"cloud.google.com/go/firestore"
 	"github.com/teris-io/shortid"
@@ -48,18 +43,10 @@ func NewLink(url string) (*Link, error) {
 }
 
 type Server struct {
-	PublicKey []byte
 }
 
 func NewServer() (*Server, error) {
-	pubKey := os.Getenv("SHARED_TOKEN")
-	if pubKey == "" {
-		return nil, errors.New("Signing key missing set SHARED_TOKEN")
-	}
-
-	s := &Server{
-		PublicKey: []byte(pubKey),
-	}
+	s := &Server{}
 	return s, nil
 }
 
@@ -133,17 +120,4 @@ func (s *Server) Get(id string, r *http.Request) *Link {
 	})
 
 	return link
-}
-
-func (s *Server) CheckSignature(url string, signature string) bool {
-	sig, err := base64.StdEncoding.DecodeString(signature)
-	if err != nil {
-		return false
-	}
-
-	mac := hmac.New(sha256.New, s.PublicKey)
-	mac.Write([]byte(url))
-	xMAC := mac.Sum(nil)
-
-	return hmac.Equal(sig, xMAC)
 }
