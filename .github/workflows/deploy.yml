@@ -4,7 +4,7 @@
 name: Deploy
 on: [push]
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: 'read'
@@ -26,3 +26,18 @@ jobs:
         image_tag: latest
         dockerfile: ./Dockerfile
         context: ./
+
+    - id: 'deploy'
+      uses: 'google-github-actions/deploy-cloudrun@v2'
+      with:
+        service: 'two47d-ink'
+        image: 'us-central1-docker.pkg.dev/d-ink-4bf48/two47d-ink/247d.ink:latest'
+
+    - name: 'deployed at'
+      run: 'curl "${{ steps.deploy.outputs.url }}"'
+
+    - uses: FirebaseExtended/action-hosting-deploy@v0
+      with:
+        repoToken: '${{ secrets.GITHUB_TOKEN }}'
+        firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT_D_INK_4BF48 }}'
+        projectId: d-ink-4bf48
