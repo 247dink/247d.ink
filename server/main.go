@@ -26,6 +26,10 @@ type JWTClaims struct {
 	jwt.RegisteredClaims
 }
 
+type Status struct {
+	DB string `json:"db"`
+}
+
 func init() {
 	sentry_dsn := os.Getenv("SENTRY_DSN")
 	if sentry_dsn != "" {
@@ -72,6 +76,28 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /health/", makeHandler(func(w http.ResponseWriter, r *http.Request) {
+		obj := &Status{}
+
+		err := server.Check(r)
+
+		var status int
+		if err == nil {
+			obj.DB = "OK"
+			status = http.StatusOK
+		} else {
+			obj.DB = err.Error()
+			status = http.StatusInternalServerError
+		}
+
+		w.WriteHeader(status)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(obj); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}))
 
 	mux.HandleFunc("GET /{id...}", makeHandler(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")

@@ -54,8 +54,8 @@ func (s *Server) Save(url string, r *http.Request) (*Link, error) {
 	var link *Link = nil
 
 	err := Client.RunTransaction(r.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
-		q := Client.Collection(COLLECTION_NAME).Where("url", "==", url)
-		doc, err := q.Documents(r.Context()).Next()
+		q := Client.Collection(COLLECTION_NAME).Where("url", "==", url).Limit(1)
+		doc, err := q.Documents(ctx).Next()
 		if err == nil {
 			log.Printf("Url exists")
 			doc.DataTo(&link)
@@ -131,4 +131,10 @@ func (s *Server) Get(id string, r *http.Request) (*Link, error) {
 	}
 
 	return link, nil
+}
+
+func (s *Server) Check(r *http.Request) error {
+	q := Client.Collection(COLLECTION_NAME).Where("url", "==", "https://www.google.com/").Limit(1)
+	_, err := q.Documents(r.Context()).Next()
+	return err
 }
