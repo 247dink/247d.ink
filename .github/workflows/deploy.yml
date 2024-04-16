@@ -32,6 +32,10 @@ jobs:
       with:
         service: 'two47d-ink'
         image: 'us-central1-docker.pkg.dev/d-ink-4bf48/two47d-ink/247d.ink:latest'
+        env_vars: |
+          SHARED_SECRET=${{ secrets.SHARED_SECRET }}
+          FIRESTORE_PROJECT_ID=d-ink-4bf48
+          DEFAULT_REDIRECT=https://www.247dink.com/
 
     - name: 'deployed at'
       run: 'curl "${{ steps.deploy.outputs.url }}"'
