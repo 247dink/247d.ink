@@ -20,7 +20,7 @@ jobs:
 
     - uses: RafikFarhad/push-to-gcr-github-action@v5-rc1
       with:
-        registry: gcr.io
+        registry: us-central1-docker.pkg.dev
         project_id: d-ink-4bf48
         image_name: 247d.ink
         image_tag: latest
