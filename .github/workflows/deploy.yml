@@ -11,7 +11,7 @@ jobs:
       id-token: 'write'
 
     steps:
-    - uses: 'actions/cehckout@v4'
+    - uses: 'actions/checkout@v4'
 
     - uses: 'google-github-actions/auth@v2'
       with:
