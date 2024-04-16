@@ -1,9 +1,9 @@
 {
   "hosting": {
     "rewrites": [{
-      "source": "/",
+      "source": "/**",
       "run": {
-        "serviceId": "two47dink",
+        "serviceId": "two47d-ink",
         "region": "us-central1",
         "pinTag": true
       }

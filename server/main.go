@@ -16,7 +16,7 @@ import (
 	"github.com/247dink/247d.ink/link"
 )
 
-var sentryHandler *sentryhttp.Handler
+var sentryHandler *sentryhttp.Handler = nil
 var defaultUrl string
 var secret string
 var address string
@@ -36,9 +36,9 @@ func init() {
 		}); err != nil {
 			fmt.Printf("sentry.Init failed: %s\n", err)
 		}
-	}
 
-	sentryHandler = sentryhttp.New(sentryhttp.Options{})
+		sentryHandler = sentryhttp.New(sentryhttp.Options{})
+	}
 
 	portStr := os.Getenv("PORT")
 	if portStr == "" {
@@ -46,12 +46,19 @@ func init() {
 	}
 	hostStr := os.Getenv("HOST")
 	if hostStr == "" {
-		hostStr = "localhost"
+		hostStr = "0.0.0.0"
 	}
 	address = fmt.Sprintf("%s:%s", hostStr, portStr)
 
 	defaultUrl = os.Getenv("DEFAULT_REDIRECT")
 	secret = os.Getenv("SHARED_SECRET")
+}
+
+func makeHandler(f http.HandlerFunc) http.HandlerFunc {
+	if sentryHandler == nil {
+		return f
+	}
+	return sentryHandler.HandleFunc(f)
 }
 
 func main() {
@@ -66,7 +73,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("GET /{id...}", sentryHandler.HandleFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /{id...}", makeHandler(func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
 			if defaultUrl == "" {
@@ -78,8 +85,8 @@ func main() {
 		}
 
 		log.Printf("GET Request received. id: %s", id)
-		obj := server.Get(id, r)
-		if obj == nil {
+		obj, err := server.Get(id, r)
+		if err != nil {
 			if defaultUrl == "" {
 				http.NotFound(w, r)
 			} else {
@@ -91,7 +98,7 @@ func main() {
 		http.Redirect(w, r, obj.Url, http.StatusMovedPermanently)
 	}))
 
-	mux.HandleFunc("POST /", sentryHandler.HandleFunc(func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("POST /", makeHandler(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("POST Request received.")
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
@@ -123,9 +130,9 @@ func main() {
 			return
 		}
 
-		obj := server.Save(uri.String(), r)
-		if obj == nil {
-			http.Error(w, "Could not save url", http.StatusInternalServerError)
+		obj, err := server.Save(uri.String(), r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 

@@ -50,13 +50,14 @@ func NewServer() (*Server, error) {
 	return s, nil
 }
 
-func (s *Server) Save(url string, r *http.Request) *Link {
+func (s *Server) Save(url string, r *http.Request) (*Link, error) {
 	var link *Link = nil
 
-	Client.RunTransaction(r.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
-		q := Client.Collection("url").Where("url", "==", url)
+	err := Client.RunTransaction(r.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
+		q := Client.Collection(COLLECTION_NAME).Where("url", "==", url)
 		doc, err := q.Documents(r.Context()).Next()
 		if err == nil {
+			log.Printf("Url exists")
 			doc.DataTo(&link)
 			tx.Update(doc.Ref, []firestore.Update{
 				{Path: "updateCount", Value: firestore.Increment(1)},
@@ -76,31 +77,36 @@ func (s *Server) Save(url string, r *http.Request) *Link {
 		link, err = NewLink(url)
 		if err != nil {
 			log.Printf("Could not create link")
-			return nil
+			return err
 		}
 
 		log.Printf("link.Id: %s", link.Id)
 		ref := Client.Collection(COLLECTION_NAME).Doc(link.Id)
 		if err = tx.Create(ref, link); err != nil {
 			log.Printf("Error saving: %s", err)
-			return nil
+			return err
 		}
 
 		return nil
 	})
 
-	return link
+	if err != nil {
+		log.Printf("Error running transaction: %s", err)
+		return nil, err
+	}
+
+	return link, nil
 }
 
-func (s *Server) Get(id string, r *http.Request) *Link {
+func (s *Server) Get(id string, r *http.Request) (*Link, error) {
 	var link *Link = nil
 
-	Client.RunTransaction(r.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
+	err := Client.RunTransaction(r.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
 		ref := Client.Collection(COLLECTION_NAME).Doc(id)
 		doc, err := tx.Get(ref)
 		if err != nil {
 			log.Printf("Could not find url '%s': %s", id, err)
-			return nil
+			return err
 		}
 
 		tx.Update(ref, []firestore.Update{
@@ -119,5 +125,10 @@ func (s *Server) Get(id string, r *http.Request) *Link {
 		return nil
 	})
 
-	return link
+	if err != nil {
+		log.Printf("Error running transaction: %s", err)
+		return nil, err
+	}
+
+	return link, nil
 }

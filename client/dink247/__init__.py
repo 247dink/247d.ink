@@ -12,7 +12,7 @@ LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
 SHARED_SECRET = os.getenv('SHARED_SECRET', None)
-SERVICE_URL = os.getenv('SERVICE_URL', 'http://localhost:8080/')
+SERVICE_URL = os.getenv('SERVICE_URL', 'https://247d.ink/')
 
 
 class Client:
