@@ -22,7 +22,7 @@ jobs:
       with:
         registry: us-central1-docker.pkg.dev
         project_id: d-ink-4bf48
-        image_name: 247d.ink
+        image_name: two47d-ink/247d.ink
         image_tag: latest
         dockerfile: ./Dockerfile
         context: ./
