@@ -10,5 +10,6 @@ setup(
     packages=["dink247"],
     install_requires=[
         'requests',
+        'pyjwt',
     ],
 )
