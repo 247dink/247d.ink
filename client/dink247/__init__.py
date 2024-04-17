@@ -24,23 +24,23 @@ class Client:
             self.secret = secret
         self.service_url = service_url
 
-    def sign(self, url):
+    def sign(self, url, ttl=0):
         if self.secret is None:
             raise Exception("Secret was not provided")
-        return jwt.encode({
+        # NOTE: exp is part of JWT spec, it is the expiration of the token.
+        #       ttl is the expiration (in days) of the link.
+        payload = {
             "url": url,
+            "ttl": ttl,
             "exp": datetime.now(tz=timezone.utc) + timedelta(hours=4),
-        }, self.secret, algorithm='HS256')
+        }
+        return jwt.encode(payload, self.secret, algorithm='HS256')
 
-    def create(self, url, base_url=None, ttl=None):
-        headers = {'Content-Type': 'application/jwt'}
-        if ttl is not None:
-            headers['X-TTL'] = str(ttl)
-
+    def create(self, url, base_url=None, ttl=0):
         r = requests.post(
             self.service_url,
-            self.sign(url),
-            headers=headers,
+            self.sign(url, ttl),
+            headers={'Content-Type': 'application/jwt'},
         )
         try:
             id = r.json()['id']

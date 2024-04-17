@@ -65,11 +65,17 @@ func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 		doc, err := q.Documents(ctx).Next()
 		if err == nil {
 			log.Printf("Url exists")
-			doc.DataTo(&link)
-			tx.Update(doc.Ref, []firestore.Update{
+
+			updates := []firestore.Update{
 				{Path: "updateCount", Value: firestore.Increment(1)},
-				{Path: "ttl", Value: ttlValue},
-			})
+			}
+			if !ttlValue.IsZero() {
+				updates = append(updates, firestore.Update{Path: "ttl", Value: ttlValue})
+			}
+
+			tx.Update(doc.Ref, updates)
+
+			doc.DataTo(&link)
 			link.Id = doc.Ref.ID
 			link.Created = doc.CreateTime
 			if !doc.ReadTime.IsZero() {

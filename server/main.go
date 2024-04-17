@@ -4,7 +4,6 @@ import (
 	"os"
 	"fmt"
 	"log"
-	"strconv"
 	"net/url"
 	"net/http"
 	"io/ioutil"
@@ -24,6 +23,7 @@ var address string
 
 type JWTClaims struct {
 	Url string `json:"url"`
+	Ttl int    `json:"ttl"`
 	jwt.RegisteredClaims
 }
 
@@ -128,8 +128,6 @@ func main() {
 	mux.HandleFunc("POST /", makeHandler(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("POST Request received.")
 
-		var ttl int = 0
-
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Could not read request", http.StatusBadRequest)
@@ -160,13 +158,7 @@ func main() {
 			return
 		}
 
-		ttlStr := r.Header.Get("X-TTL")
-		if ttlStr != "" {
-			ttl, _ = strconv.Atoi(ttlStr)
-			log.Printf("TTL set to: %d", ttl)
-		}
-
-		obj, err := server.Save(uri.String(), ttl, r)
+		obj, err := server.Save(uri.String(), claims.Ttl, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
