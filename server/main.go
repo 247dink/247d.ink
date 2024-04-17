@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"log"
+	"strconv"
 	"net/url"
 	"net/http"
 	"io/ioutil"
@@ -126,6 +127,9 @@ func main() {
 
 	mux.HandleFunc("POST /", makeHandler(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("POST Request received.")
+
+		var ttl int = 0
+
 		body, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Could not read request", http.StatusBadRequest)
@@ -156,7 +160,12 @@ func main() {
 			return
 		}
 
-		obj, err := server.Save(uri.String(), r)
+		ttlStr := r.Header.Get("X-TTL")
+		if ttlStr != "" {
+			ttl, _ = strconv.Atoi(ttlStr)
+		}
+
+		obj, err := server.Save(uri.String(), ttl, r)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
