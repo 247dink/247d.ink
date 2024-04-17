@@ -163,6 +163,7 @@ func main() {
 		ttlStr := r.Header.Get("X-TTL")
 		if ttlStr != "" {
 			ttl, _ = strconv.Atoi(ttlStr)
+			log.Printf("TTL set to: %d", ttl)
 		}
 
 		obj, err := server.Save(uri.String(), ttl, r)
