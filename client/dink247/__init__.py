@@ -19,6 +19,7 @@ class Client:
     def __init__(self, secret=SHARED_SECRET, service_url=SERVICE_URL):
         try:
             self.secret = secret.encode()
+
         except AttributeError:
             self.secret = secret
         self.service_url = service_url
@@ -31,7 +32,7 @@ class Client:
             "exp": datetime.now(tz=timezone.utc) + timedelta(hours=4),
         }, self.secret, algorithm='HS256')
 
-    def create(self, url):
+    def create(self, url, base_url=None):
         r = requests.post(
             self.service_url,
             self.sign(url),
@@ -44,4 +45,7 @@ class Client:
         except JSONDecodeError:
             raise Exception(r.content.decode())
 
-        return f'{self.service_url.rstrip("/")}/{id}'
+        if base_url is None:
+            base_url = self.service_url.rstrip("/")
+
+        return f'{base_url}/{id}'
