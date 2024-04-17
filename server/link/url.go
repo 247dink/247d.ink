@@ -54,8 +54,8 @@ func NewServer() (*Server, error) {
 
 func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 	var link *Link = nil
-	var ttlValue time.Time = time.Time{}
 
+	var ttlValue time.Time = time.Time{}
 	if ttl != 0 {
 		ttlValue = time.Now().Add(time.Hour * time.Duration(ttl * 24))
 	}
@@ -80,8 +80,8 @@ func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 			}
 			return nil
 		}
-		log.Printf("Url '%s' not found: %s", url, err)
 
+		log.Printf("Adding new url %s", url)
 		link, err = NewLink(url)
 		if err != nil {
 			log.Printf("Could not create link")

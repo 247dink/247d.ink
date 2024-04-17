@@ -4,6 +4,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions: write-all
+    if: github.event.pull_request.merged == true
 
     steps:
     - uses: 'actions/checkout@v4'
