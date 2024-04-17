@@ -32,11 +32,15 @@ class Client:
             "exp": datetime.now(tz=timezone.utc) + timedelta(hours=4),
         }, self.secret, algorithm='HS256')
 
-    def create(self, url, base_url=None):
+    def create(self, url, base_url=None, ttl=None):
+        headers = {'Content-Type': 'application/jwt'}
+        if ttl is not None:
+            headers['X-TTL'] = str(ttl)
+
         r = requests.post(
             self.service_url,
             self.sign(url),
-            headers={'Content-Type': 'application/jwt'},
+            headers=headers,
         )
         try:
             id = r.json()['id']

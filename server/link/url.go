@@ -17,6 +17,7 @@ const COLLECTION_NAME string = "url"
 type Link struct {
 	Id          string      `json:"id" firestore:"-"`
 	Url         string      `json:"url" firestore:"url"`
+	TTL			time.Time	`json:"ttl" firestore:"ttl"`
 	Created     time.Time   `json:"created" firestore:"-"`
 	Accessed    time.Time   `json:"accessed" firestore:"-"`
 	Updated     time.Time   `json:"updated" firestore:"-"`
@@ -32,6 +33,7 @@ func NewLink(url string) (*Link, error) {
 
 	l := &Link{
 		Url: url,
+		TTL: time.Time{},
 		AccessCount: 0,
 		UpdateCount: 0,
 		Id: id,
@@ -50,8 +52,13 @@ func NewServer() (*Server, error) {
 	return s, nil
 }
 
-func (s *Server) Save(url string, r *http.Request) (*Link, error) {
+func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 	var link *Link = nil
+	var ttlValue time.Time = time.Time{}
+
+	if ttl != 0 {
+		ttlValue = time.Now().Add(time.Hour * time.Duration(ttl * 24))
+	}
 
 	err := Client.RunTransaction(r.Context(), func(ctx context.Context, tx *firestore.Transaction) error {
 		q := Client.Collection(COLLECTION_NAME).Where("url", "==", url).Limit(1)
@@ -61,6 +68,7 @@ func (s *Server) Save(url string, r *http.Request) (*Link, error) {
 			doc.DataTo(&link)
 			tx.Update(doc.Ref, []firestore.Update{
 				{Path: "updateCount", Value: firestore.Increment(1)},
+				{Path: "ttl", Value: ttlValue},
 			})
 			link.Id = doc.Ref.ID
 			link.Created = doc.CreateTime
@@ -79,6 +87,8 @@ func (s *Server) Save(url string, r *http.Request) (*Link, error) {
 			log.Printf("Could not create link")
 			return err
 		}
+
+		link.TTL = ttlValue
 
 		log.Printf("link.Id: %s", link.Id)
 		ref := Client.Collection(COLLECTION_NAME).Doc(link.Id)
