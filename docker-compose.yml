@@ -1,3 +1,7 @@
+networks:
+  247dink_api_shared:
+    external: true
+
 services:
   247d_ink:
     image: 247d_ink
@@ -10,14 +14,17 @@ services:
     volumes:
       - ./server:/app:ro
     environment:
-      - SENTRY_DSN=https://3811839bf077e9e5733103f1a295752c@o4506735924019200.ingest.us.sentry.io/4507076127424512
-      - SHARED_SECRET=339aba4a-d7c1-4b35-a8bd-d2ebb00fb258
+      - DINK247_SHARED_SECRET=339aba4a-d7c1-4b35-a8bd-d2ebb00fb258
       - FIRESTORE_PROJECT_ID=d-ink-4bf48
       - FIRESTORE_EMULATOR_HOST=fs:8080
     ports:
       - 8080:8080
+    networks:
+      - 247dink_api_shared
 
   fs:
     image: mtlynch/firestore-emulator-docker
     environment:
       - FIRESTORE_PROJECT_ID=d-ink-4bf48
+    networks:
+      - 247dink_api_shared

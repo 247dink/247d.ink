@@ -11,8 +11,8 @@ import jwt
 LOGGER = logging.getLogger(__name__)
 LOGGER.addHandler(logging.NullHandler())
 
-SHARED_SECRET = os.getenv('SHARED_SECRET', None)
-SERVICE_URL = os.getenv('SERVICE_URL', 'https://247d.ink/')
+SHARED_SECRET = os.getenv('DINK247_SHARED_SECRET', None)
+SERVICE_URL = os.getenv('DINK247_SERVICE_URL', 'https://247d.ink/')
 
 
 class Client:

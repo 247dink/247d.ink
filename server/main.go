@@ -55,7 +55,7 @@ func init() {
 	address = fmt.Sprintf("%s:%s", hostStr, portStr)
 
 	defaultUrl = os.Getenv("DEFAULT_REDIRECT")
-	secret = os.Getenv("SHARED_SECRET")
+	secret = os.Getenv("DINK247_SHARED_SECRET")
 }
 
 func makeHandler(f http.HandlerFunc) http.HandlerFunc {
