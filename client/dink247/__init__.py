@@ -46,6 +46,7 @@ class Client:
             raise Exception(r.content.decode())
 
         if base_url is None:
-            base_url = self.service_url.rstrip("/")
+            base_url = self.service_url
+        base_url = base_url.rstrip("/")
 
         return f'{base_url}/{id}'
