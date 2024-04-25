@@ -7,3 +7,14 @@ build:
 
 run:
 	${DOCKER_COMPOSE} up
+
+
+lint:
+	${MAKE} -C client lint
+
+
+mypy:
+	${MAKE} -C client mypy
+
+
+ci: mypy lint
