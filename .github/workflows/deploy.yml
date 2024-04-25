@@ -6,20 +6,33 @@ on:
       - closed
 
 jobs:
-  test:
+  lint-client:
     runs-on: ubuntu-latest
     steps:
     - name: Check out
       uses: actions/checkout@v4
 
-    - name: Test
-      run: make ci
+    - name: Lint
+      run: make lint-client
+
+  lint-server:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v4
+
+    - name: Lint
+      uses: golangci/golangci-lint-action@v5
+      with:
+        working-directory: server
 
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions: write-all
-    needs: test
     if: github.event.pull_request.merged == true
+    needs:
+      - lint-client
+      - lint-server
 
     steps:
     - uses: 'actions/checkout@v4'
