@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/url"
 	"net/http"
-	"io/ioutil"
+	"io"
 	"encoding/json"
 
 	"github.com/getsentry/sentry-go"
@@ -128,7 +128,7 @@ func main() {
 	mux.HandleFunc("POST /", makeHandler(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("POST Request received.")
 
-		body, err := ioutil.ReadAll(r.Body)
+		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			http.Error(w, "Could not read request", http.StatusBadRequest)
 			return
