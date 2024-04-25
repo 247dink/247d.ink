@@ -73,9 +73,14 @@ func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 				updates = append(updates, firestore.Update{Path: "ttl", Value: ttlValue})
 			}
 
-			tx.Update(doc.Ref, updates)
+			if err := tx.Update(doc.Ref, updates); err != nil {
+				return err
+			}
 
-			doc.DataTo(&link)
+			if err := doc.DataTo(&link); err != nil {
+				return err
+			}
+
 			link.Id = doc.Ref.ID
 			link.Created = doc.CreateTime
 			if !doc.ReadTime.IsZero() {
@@ -125,11 +130,15 @@ func (s *Server) Get(id string, r *http.Request) (*Link, error) {
 			return err
 		}
 
-		tx.Update(ref, []firestore.Update{
+		if err := tx.Update(ref, []firestore.Update{
 			{Path: "accessCount", Value: firestore.Increment(1)},
-		})
+		}); err != nil {
+			return err
+		}
 
-		doc.DataTo(&link)
+		if err := doc.DataTo(&link); err != nil {
+			return err
+		}
 		link.Id = doc.Ref.ID
 		link.Created = doc.CreateTime
 		if !doc.ReadTime.IsZero() {
