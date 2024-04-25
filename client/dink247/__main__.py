@@ -9,7 +9,7 @@ LOGGER = logging.getLogger()
 LOGGER.addHandler(logging.StreamHandler())
 
 
-def main(args):
+def main(args: argparse.Namespace) -> None:
     print(Client().create(args.url, ttl=args.ttl))
 
 

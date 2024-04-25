@@ -8,6 +8,10 @@ requests = "*"
 pyjwt = "*"
 
 [dev-packages]
+mypy = "*"
+types-requests = "*"
+types-setuptools = "*"
+flake8 = "*"
 
 [requires]
 python_version = "3.10"
