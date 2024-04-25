@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime, timedelta, timezone
-from pprint import pprint
+from typing import Optional, Union
 
 import requests
 from requests.exceptions import JSONDecodeError
@@ -16,15 +16,18 @@ SERVICE_URL = os.getenv('DINK247_SERVICE_URL', 'https://247d.ink/')
 
 
 class Client:
-    def __init__(self, secret=SHARED_SECRET, service_url=SERVICE_URL):
-        try:
-            self.secret = secret.encode()
-
-        except AttributeError:
-            self.secret = secret
+    def __init__(self,
+                 secret: Union[str, bytes, None] = SHARED_SECRET,
+                 service_url: str = SERVICE_URL
+                 ) -> None:
+        if not secret:
+            raise TypeError('secret missing')
+        if isinstance(secret, str):
+            secret = secret.encode()
+        self.secret = secret
         self.service_url = service_url
 
-    def sign(self, url, ttl=0):
+    def sign(self, url: str, ttl: int = 0) -> str:
         if self.secret is None:
             raise Exception("Secret was not provided")
         # NOTE: exp is part of JWT spec, it is the expiration of the token.
@@ -36,7 +39,11 @@ class Client:
         }
         return jwt.encode(payload, self.secret, algorithm='HS256')
 
-    def create(self, url, base_url=None, ttl=0):
+    def create(self,
+               url: str,
+               base_url: Optional[str] = None,
+               ttl: int = 0
+               ) -> str:
         r = requests.post(
             self.service_url,
             self.sign(url, ttl),

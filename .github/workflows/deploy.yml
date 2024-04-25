@@ -6,9 +6,19 @@ on:
       - closed
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v4
+
+    - name: Test
+      run: make ci
+
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions: write-all
+    needs: test
     if: github.event.pull_request.merged == true
 
     steps:
