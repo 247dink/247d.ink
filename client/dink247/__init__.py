@@ -20,8 +20,6 @@ class Client:
                  secret: Union[str, bytes, None] = SHARED_SECRET,
                  service_url: str = SERVICE_URL
                  ) -> None:
-        if not secret:
-            raise TypeError('secret missing')
         if isinstance(secret, str):
             secret = secret.encode()
         self.secret = secret
@@ -32,6 +30,8 @@ class Client:
             raise Exception("Secret was not provided")
         # NOTE: exp is part of JWT spec, it is the expiration of the token.
         #       ttl is the expiration (in days) of the link.
+        if self.secret is None:
+            raise TypeError('secret missing')
         payload = {
             "url": url,
             "ttl": ttl,
