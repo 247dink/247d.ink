@@ -64,7 +64,7 @@ func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 		q := Client.Collection(COLLECTION_NAME).Where("url", "==", url).Limit(1)
 		doc, err := q.Documents(ctx).Next()
 		if err == nil {
-			log.Printf("Url exists")
+			log.Printf("URL exists, updating")
 
 			updates := []firestore.Update{
 				{Path: "updateCount", Value: firestore.Increment(1)},
@@ -92,10 +92,10 @@ func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 			return nil
 		}
 
-		log.Printf("Adding new url %s", url)
+		log.Printf("Adding new URL %s", url)
 		link, err = NewLink(url)
 		if err != nil {
-			log.Printf("Could not create link")
+			log.Fatalln("Could not create URL")
 			return err
 		}
 
@@ -104,7 +104,7 @@ func (s *Server) Save(url string, ttl int, r *http.Request) (*Link, error) {
 		log.Printf("link.Id: %s", link.Id)
 		ref := Client.Collection(COLLECTION_NAME).Doc(link.Id)
 		if err = tx.Create(ref, link); err != nil {
-			log.Printf("Error saving: %s", err)
+			log.Printf("Error saving URL: %s", err)
 			return err
 		}
 
@@ -126,17 +126,19 @@ func (s *Server) Get(id string, r *http.Request) (*Link, error) {
 		ref := Client.Collection(COLLECTION_NAME).Doc(id)
 		doc, err := tx.Get(ref)
 		if err != nil {
-			log.Printf("Could not find url '%s': %s", id, err)
+			log.Printf("Could not find URL '%s': %s", id, err)
 			return err
 		}
 
 		if err := tx.Update(ref, []firestore.Update{
 			{Path: "accessCount", Value: firestore.Increment(1)},
 		}); err != nil {
+			log.Fatalln("Error updating URL: %s", err)
 			return err
 		}
 
 		if err := doc.DataTo(&link); err != nil {
+			log.Fatalln("Error reading URL: %s", err)
 			return err
 		}
 		link.Id = doc.Ref.ID
