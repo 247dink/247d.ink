@@ -24,7 +24,7 @@ func init() {
 	conf := &firebase.Config{ProjectID: project_id}
 	app, err := firebase.NewApp(ctx, conf)
 	if err != nil {
-		log.Fatalln("Error initializing app: %s", err)
+		log.Fatalf("Error initializing app: %s", err)
 		return
 	}
 

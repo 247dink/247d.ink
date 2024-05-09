@@ -133,12 +133,12 @@ func (s *Server) Get(id string, r *http.Request) (*Link, error) {
 		if err := tx.Update(ref, []firestore.Update{
 			{Path: "accessCount", Value: firestore.Increment(1)},
 		}); err != nil {
-			log.Fatalln("Error updating URL: %s", err)
+			log.Fatalf("Error updating URL: %s", err)
 			return err
 		}
 
 		if err := doc.DataTo(&link); err != nil {
-			log.Fatalln("Error reading URL: %s", err)
+			log.Fatalf("Error reading URL: %s", err)
 			return err
 		}
 		link.Id = doc.Ref.ID
