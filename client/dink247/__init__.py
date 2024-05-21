@@ -27,11 +27,9 @@ class Client:
 
     def sign(self, url: str, ttl: int = 0) -> str:
         if self.secret is None:
-            raise Exception("Secret was not provided")
+            raise TypeError('secret missing')
         # NOTE: exp is part of JWT spec, it is the expiration of the token.
         #       ttl is the expiration (in days) of the link.
-        if self.secret is None:
-            raise TypeError('secret missing')
         payload = {
             "url": url,
             "ttl": ttl,
@@ -44,6 +42,9 @@ class Client:
                base_url: Optional[str] = None,
                ttl: int = 0
                ) -> str:
+        if base_url is None:
+            base_url = self.service_url
+        base_url = base_url.rstrip("/")
         r = requests.post(
             self.service_url,
             self.sign(url, ttl),
@@ -55,9 +56,5 @@ class Client:
 
         except JSONDecodeError:
             raise Exception(r.content.decode())
-
-        if base_url is None:
-            base_url = self.service_url
-        base_url = base_url.rstrip("/")
 
         return f'{base_url}/{id}'

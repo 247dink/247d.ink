@@ -12,10 +12,10 @@ import (
 var Client *firestore.Client
 
 func init() {
-	project_id := os.Getenv("FIRESTORE_PROJECT_ID")
-	ctx := context.Background()
 	var err error
+	ctx := context.Background()
 
+	project_id := os.Getenv("FIRESTORE_PROJECT_ID")
 	if project_id == "" {
 		log.Fatalln("Must define FIRESTORE_PROJECT_ID")
 		return
@@ -24,7 +24,8 @@ func init() {
 	conf := &firebase.Config{ProjectID: project_id}
 	app, err := firebase.NewApp(ctx, conf)
 	if err != nil {
-		log.Printf("Error initializing app: %s", err)
+		log.Fatalf("Error initializing app: %s", err)
+		return
 	}
 
 	Client, err = app.Firestore(ctx)
