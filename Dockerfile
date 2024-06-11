@@ -18,4 +18,6 @@ RUN apk add --no-cache ca-certificates
 
 COPY --from=builder /app/server /app/server
 
+USER nobody
+
 CMD ["/app/server"]
